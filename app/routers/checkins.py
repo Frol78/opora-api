@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -36,3 +36,20 @@ def list_checkins(
         .order_by(CheckIn.id.desc())
         .all()
     )
+
+
+@router.get("/{checkin_id}", response_model=CheckInResponse)
+def get_checkin(
+    checkin_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Одна запись. Чужая запись даёт 404, как и несуществующая."""
+    record = (
+        db.query(CheckIn)
+        .filter(CheckIn.id == checkin_id, CheckIn.user_id == current_user.id)
+        .first()
+    )
+    if record is None:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+    return record
