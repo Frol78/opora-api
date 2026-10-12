@@ -1,22 +1,11 @@
-# Импортируем класс FastAPI из установленной библиотеки fastapi.
-# FastAPI — это наш главный инструмент для создания веб-приложения (бэкенда).
 from fastapi import FastAPI
+from app.database import Base, engine
+from app.models import User, CheckIn
+from app.routers.auth import router as auth_router
 
-# Создаем экземпляр (объект) приложения FastAPI.
-# Мы задаем ему метаданные: название, описание и версию. 
-# Эта информация автоматически попадет в автодокументацию (Swagger UI).
-app = FastAPI(
-    title="Opora API",
-    description="Бэкенд для проекта Опора",
-    version="0.1.0"
-)
+app = FastAPI(title="Опора API", version="1.0.0")
+app.include_router(auth_router)
 
-# Декоратор `@app.get("/")` объясняет FastAPI, что делать, 
-# когда клиент (браузер или мобильное приложение) делает HTTP-запрос 
-# методом GET (запрос на чтение) на самый главный корень сайта ("/").
 @app.get("/")
-def read_root():
-    # Функция, которая сработает при обращении к корню.
-    # В Python мы возвращаем обычный словарь (dict), 
-    # но FastAPI автоматически превращает его в JSON-ответ для клиента.
-    return {"message": "Привет, мир! FastAPI успешно запущен 🚀"}
+def root():
+    return {"message": "Добро пожаловать в API приложения 'Опора'! 🌟"}
