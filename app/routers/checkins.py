@@ -53,3 +53,22 @@ def get_checkin(
     if record is None:
         raise HTTPException(status_code=404, detail="Запись не найдена")
     return record
+
+
+@router.delete("/{checkin_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_checkin(
+    checkin_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Удалить свою запись. Чужая или несуществующая даёт 404."""
+    record = (
+        db.query(CheckIn)
+        .filter(CheckIn.id == checkin_id, CheckIn.user_id == current_user.id)
+        .first()
+    )
+    if record is None:
+        raise HTTPException(status_code=404, detail="Запись не найдена")
+    db.delete(record)
+    db.commit()
+    return None
