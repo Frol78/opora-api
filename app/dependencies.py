@@ -26,7 +26,9 @@ def get_current_user(
             algorithms=[settings.algorithm],
         )
         user_id = payload.get("sub")
-        if user_id is None:
+        token_version = payload.get("tver")
+        
+        if user_id is None or token_version is None:
             raise error
     except jwt.InvalidTokenError:
         raise error
@@ -34,4 +36,9 @@ def get_current_user(
     user = db.get(User, int(user_id))
     if user is None:
         raise error
+        
+    # Если версия токена в базе изменилась (например, после смены пароля), токен больше недействителен
+    if user.token_version != token_version:
+        raise error
+
     return user

@@ -48,7 +48,9 @@ def register(data: RegisterIn, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    return {"id": user.id, "email": user.email, "created_at": user.created_at}
+
+    token = create_access_token({"sub": str(user.id), "tver": user.token_version})
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @router.post("/login")
@@ -62,7 +64,7 @@ def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     if user is None or not verify_password(form.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Неверный email или пароль")
 
-    token = create_access_token({"sub": str(user.id)})
+    token = create_access_token({"sub": str(user.id), "tver": user.token_version})
     return {"access_token": token, "token_type": "bearer"}
 
 
@@ -72,7 +74,7 @@ def change_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Смена пароля. Нужны токен и текущий пароль."""
+    """Смена пароля. Нужны токен и текущий пароль. Увеличивает token_version для отзыва старых токенов."""
     if not verify_password(data.old_password, current_user.password_hash):
         raise HTTPException(status_code=400, detail="Текущий пароль неверный")
 
@@ -80,5 +82,6 @@ def change_password(
         raise HTTPException(status_code=400, detail="Новый пароль должен отличаться от старого")
 
     current_user.password_hash = get_password_hash(data.new_password)
+    current_user.token_version += 1  # Инвалидируем все старые токены
     db.commit()
     return {"detail": "Пароль изменён"}
